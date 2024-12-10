@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Manufacturer Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .form-container {
+            width: 400px;
+            margin: auto;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container input,
+        .form-container button {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-container label {
+            font-weight: bold;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-container input {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container">
+        <h2>Medicine Details</h2>
+        <form id="medicineForm">
+            <label for="manufacturer">Manufacturer Name:</label>
+            <input type="text" id="manufacturer" required>
+
+            <label for="medicineName">Medicine Name:</label>
+            <input type="text" id="medicineName" required>
+
+            <label for="medicineId">Medicine ID:</label>
+            <input type="text" id="medicineId" required>
+
+            <label for="manufactureDate">Manufacturing Date:</label>
+            <input type="date" id="manufactureDate" required>
+
+            <label for="expiryDate">Expiry Date:</label>
+            <input type="date" id="expiryDate" required>
+
+            <div class="checkbox-container">
+                <input type="checkbox" id="isVerified">
+                <label for="isVerified">Verified</label>
+            </div>
+
+            <button type="button" id="submitBtn">Submit</button>
+            <button type="button" id="generateQrBtn">Generate QR</button>
+            <div id="qrcode" style="margin-top: 20px; text-align: center;"></div>
+
+        </form>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+      
+        // Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyAYgjAAVKC3AuzvEzH402PcxFF66MdUEaA",
+          authDomain: "manufacturer-database.firebaseapp.com",
+          databaseURL: "https://manufacturer-database-default-rtdb.firebaseio.com",
+          projectId: "manufacturer-database",
+          storageBucket: "manufacturer-database.appspot.com",
+          messagingSenderId: "921165353469",
+          appId: "1:921165353469:web:74690781fae7d32eda8994",
+          measurementId: "G-Z8L28GCVR2"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+      
+        // Global variable to store the last saved medicine key
+        let lastSavedMedicineKey = null;
+      
+        const submitBtn = document.getElementById('submitBtn');
+        const generateQrBtn = document.getElementById('generateQrBtn');
+        const qrCodeDiv = document.getElementById('qrcode');
+      
+        // Submit button handler
+        submitBtn.addEventListener('click', () => {
+          const manufacturer = document.getElementById('manufacturer').value;
+          const medicineName = document.getElementById('medicineName').value;
+          const medicineId = document.getElementById('medicineId').value;
+          const manufactureDate = document.getElementById('manufactureDate').value;
+          const expiryDate = document.getElementById('expiryDate').value;
+          const isVerified = document.getElementById('isVerified').checked;
+      
+          if (!manufacturer || !medicineName || !medicineId || !manufactureDate || !expiryDate) {
+            alert('Please fill out all required fields.');
+            return;
+          }
+      
+          const medicinesRef = ref(database, 'medicines');
+          const newMedicineRef = push(medicinesRef);
+      
+          set(newMedicineRef, {
+            manufacturer,
+            medicineName,
+            medicineId,
+            manufactureDate,
+            expiryDate,
+            isVerified
+          }).then(() => {
+            alert('Medicine data saved successfully!');
+            document.getElementById('medicineForm').reset();
+            lastSavedMedicineKey = newMedicineRef.key; // Save the key for QR code generation
+          }).catch((error) => {
+            console.error('Error saving data:', error);
+            alert('Error saving data. Please try again.');
+          });
+        });
+      
+        // Generate QR code handler
+        generateQrBtn.addEventListener('click', () => {
+          if (!lastSavedMedicineKey) {
+            alert('Please save the medicine details first.');
+            return;
+          }
+          const qrLink = `http://localhost:5500/medicine-details.html?key=${lastSavedMedicineKey}`;
+
+      
+          
+          qrCodeDiv.innerHTML = ''; // Clear existing QR code
+          new QRCode(qrCodeDiv, {
+            text: qrLink,
+            width: 200,
+            height: 200
+          });
+          alert('QR Code generated! Scan it to view medicine details.');
+        });
+      </script>
+      
+</body>
+
+</html>
